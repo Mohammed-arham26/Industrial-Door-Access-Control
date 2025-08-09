@@ -1,0 +1,8 @@
+	•	Normal Mode:-
+	•	When a button is pressed (BTN_DOORx), that door’s relay energizes and LED turns ON.
+	•	After 5 seconds, the door locks again.
+	•	Interlock Mode:-
+	•	DIP switches control which doors can open together.
+	•	Example: DIP1 ON means Door1 won’t open if any other door is already open.
+	•	Emergency Override:-
+	•	When EMERGENCY is triggered, all doors lock and buzzer sounds for 5 seconds.
