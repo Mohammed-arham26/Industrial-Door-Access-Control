@@ -1,0 +1,104 @@
+#include <REG2051.H> // AT89C2051 register definitions
+
+// Define pin mappings
+#define DOOR1_RELAY P1_0
+#define DOOR2_RELAY P1_1
+#define DOOR3_RELAY P1_2
+#define DOOR4_RELAY P1_3
+
+#define DOOR1_LED   P1_4
+#define DOOR2_LED   P1_5
+#define DOOR3_LED   P1_6
+#define DOOR4_LED   P1_7
+
+#define BTN_DOOR1   P3_0
+#define BTN_DOOR2   P3_1
+#define BTN_DOOR3   P3_2
+#define BTN_DOOR4   P3_3
+
+#define DIP1        P3_4
+#define DIP2        P3_5
+#define DIP3        P3_6
+#define DIP4        P3_7
+
+#define EMERGENCY   P3_5
+#define BUZZER      P3_6
+
+// Delay function
+void delay_ms(unsigned int ms) {
+    unsigned int i, j;
+    for(i=0; i<ms; i++)
+        for(j=0; j<1275; j++);
+}
+
+// Lock all doors
+void lock_all() {
+    DOOR1_RELAY = 0; DOOR1_LED = 0;
+    DOOR2_RELAY = 0; DOOR2_LED = 0;
+    DOOR3_RELAY = 0; DOOR3_LED = 0;
+    DOOR4_RELAY = 0; DOOR4_LED = 0;
+}
+
+// Unlock specific door
+void unlock_door(unsigned char door) {
+    switch(door) {
+        case 1: DOOR1_RELAY = 1; DOOR1_LED = 1; break;
+        case 2: DOOR2_RELAY = 1; DOOR2_LED = 1; break;
+        case 3: DOOR3_RELAY = 1; DOOR3_LED = 1; break;
+        case 4: DOOR4_RELAY = 1; DOOR4_LED = 1; break;
+    }
+}
+
+// Check DIP switches for interlock
+bit is_interlock_ok(unsigned char door) {
+    // Example: DIP1 ON means Door1 & Door2 can't open together
+    if(door == 1 && DIP1 == 1 && (DOOR2_LED || DOOR3_LED || DOOR4_LED)) return 0;
+    if(door == 2 && DIP2 == 1 && (DOOR1_LED || DOOR3_LED || DOOR4_LED)) return 0;
+    if(door == 3 && DIP3 == 1 && (DOOR1_LED || DOOR2_LED || DOOR4_LED)) return 0;
+    if(door == 4 && DIP4 == 1 && (DOOR1_LED || DOOR2_LED || DOOR3_LED)) return 0;
+    return 1;
+}
+
+void main() {
+    // Initial state
+    lock_all();
+    BUZZER = 0;
+
+    while(1) {
+        // Emergency override
+        if(EMERGENCY == 1) {
+            lock_all();
+            BUZZER = 1; // Alarm ON
+            delay_ms(5000);
+            BUZZER = 0;
+        }
+
+        // Door1 request
+        if(BTN_DOOR1 == 1 && is_interlock_ok(1)) {
+            unlock_door(1);
+            delay_ms(5000); // Keep open for 5 sec
+            lock_all();
+        }
+
+        // Door2 request
+        if(BTN_DOOR2 == 1 && is_interlock_ok(2)) {
+            unlock_door(2);
+            delay_ms(5000);
+            lock_all();
+        }
+
+        // Door3 request
+        if(BTN_DOOR3 == 1 && is_interlock_ok(3)) {
+            unlock_door(3);
+            delay_ms(5000);
+            lock_all();
+        }
+
+        // Door4 request
+        if(BTN_DOOR4 == 1 && is_interlock_ok(4)) {
+            unlock_door(4);
+            delay_ms(5000);
+            lock_all();
+        }
+    }
+}
